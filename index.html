@@ -550,6 +550,31 @@
   .timing-bar-fill.normal { background: #4ec9b0; }
   .timing-bar-fill.long   { background: #d4a574; }
   .timing-bar-fill.vlong  { background: #c97064; }
+
+  /* ── Pip Mode — symmetric margins (equal left/right) ──────── */
+  /*
+    Standard screenplay: left=1.5", right=1.0" (actor binding allowance).
+    Pip mode: both sides = 1.0" for cleaner on-screen reading.
+    Character/paren/dialogue indents shift left by 0.5" to compensate.
+      character: 3.7" -> 3.2"  (211px -> 163px inside text block)
+      paren:     3.1" -> 2.6"  (154px -> 106px inside text block)
+      dialogue:  2.5" -> 2.0"  (96px  ->  48px inside text block)
+  */
+  #preview-wrap.pip-mode .page {
+    padding-left: 96px;  /* match right padding — 1" both sides */
+  }
+  #preview-wrap.pip-mode .fnt-character { margin-left: 163px; }
+  #preview-wrap.pip-mode .fnt-paren     { margin-left: 106px; }
+  #preview-wrap.pip-mode .fnt-dialogue  { margin-left: 48px;  margin-right: 96px; }
+  #preview-wrap.pip-mode .fnt-lyric     { margin-left: 48px;  }
+  #preview-wrap.pip-mode .page .footer  { left: 96px; }
+  /* Share viewer pip mode */
+  #share-preview-wrap.pip-mode .page { padding-left: 96px; }
+  #share-preview-wrap.pip-mode .fnt-character { margin-left: 163px; }
+  #share-preview-wrap.pip-mode .fnt-paren     { margin-left: 106px; }
+  #share-preview-wrap.pip-mode .fnt-dialogue  { margin-left: 48px; margin-right: 96px; }
+  #share-preview-wrap.pip-mode .fnt-lyric     { margin-left: 48px; }
+
   @media print {
     body { background: white; }
     header, .tabs, .editor-bars, .drawer, .drawer-overlay, .modal-overlay, .toast, .preview-controls, .autocomplete { display: none !important; }
@@ -663,6 +688,7 @@
     <button class="drawer-item" id="draftsBtn"><span class="icon">⎗</span> Drafts &amp; Versions</button>
     <button class="drawer-item toggle" id="autocompleteToggle"><span class="icon">↹</span> Autocomplete <span class="badge" id="acBadge">ON</span></button>
     <button class="drawer-item toggle" id="highlightToggle"><span class="icon">◈</span> Syntax Colours <span class="badge" id="hlBadge">OFF</span></button>
+    <button class="drawer-item toggle" id="pipToggle"><span class="icon">⇔</span> Pip Mode <span class="badge" id="pipBadge">OFF</span></button>
     <div class="drawer-section">Help</div>
     <button class="drawer-item" id="syntaxBtn"><span class="icon">?</span> Fountain Syntax</button>
     <button class="drawer-item" id="sampleBtn"><span class="icon">★</span> Load Sample</button>
@@ -1054,7 +1080,7 @@ const smartContext = document.getElementById('smartContext');
 let saveTimer = null, renderTimer = null, zoom = 1.0;
 let prefs = loadPrefs();
 function loadPrefs() {
-  try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || { autocomplete: true, highlight: false }; }
+  try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || { autocomplete: true, highlight: false, pip: false }; }
   catch { return { autocomplete: true }; }
 }
 function savePrefs() { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); }
@@ -3442,6 +3468,42 @@ function triggerDriveAutosave() {
   if (driveToken && drivePrefs && drivePrefs.enabled) scheduleDriveSave();
 }
 
+
+/* ── Pip Mode ── */
+const pipToggle = document.getElementById('pipToggle');
+const pipBadge  = document.getElementById('pipBadge');
+
+function syncPipToggle() {
+  if (prefs.pip) { pipToggle.classList.add('on'); pipBadge.textContent = 'ON'; }
+  else           { pipToggle.classList.remove('on'); pipBadge.textContent = 'OFF'; }
+}
+
+function applyPipMode() {
+  const pw  = document.getElementById('preview-wrap');
+  const spw = document.getElementById('share-preview-wrap');
+  if (prefs.pip) {
+    pw.classList.add('pip-mode');
+    if (spw) spw.classList.add('pip-mode');
+  } else {
+    pw.classList.remove('pip-mode');
+    if (spw) spw.classList.remove('pip-mode');
+  }
+}
+
+pipToggle.addEventListener('click', () => {
+  closeDrawer();
+  prefs.pip = !prefs.pip;
+  savePrefs();
+  syncPipToggle();
+  applyPipMode();
+  // Switch to preview tab so user sees the change immediately
+  const previewTab = document.querySelector('.tab[data-panel="preview-panel"]');
+  if (previewTab && !previewTab.classList.contains('active')) {
+    previewTab.click();
+  }
+  showToast(prefs.pip ? 'Pip mode on' : 'Pip mode off');
+});
+
 /* INIT */
 (async function init() {
   // ── Migrate legacy single-doc storage ──────────────────────────
@@ -3487,6 +3549,8 @@ function triggerDriveAutosave() {
   updateSmartBar();
   renderPreview();
   syncHlToggle();
+  syncPipToggle();
+  applyPipMode();
   checkStorageHealth();
   if (prefs.highlight) enableHighlight();
   else disableHighlight();
