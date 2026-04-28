@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -21,7 +22,11 @@
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   /* ── Root: body is a vertical flex column filling the screen ── */
-  html { height: 100%; }
+  html {
+    height: 100%;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
   body {
     margin: 0; padding: 0;
     height: 100%;
@@ -200,6 +205,8 @@
   #preview-wrap {
     flex: 1; overflow: auto; -webkit-overflow-scrolling: touch;
     background: #0e0e0e; padding: 16px 8px;
+    -webkit-text-size-adjust: none;
+    text-size-adjust: none;
   }
   /*
     Real screenplay page geometry. 1in = 96px at 96dpi.
@@ -218,6 +225,12 @@
     box-shadow: var(--shadow);
     font-family: 'Courier Prime', 'Courier New', monospace;
     font-size: 12pt; line-height: 1; position: relative;
+    -webkit-text-size-adjust: none;
+    text-size-adjust: none;
+  }
+  .page * {
+    -webkit-text-size-adjust: none;
+    text-size-adjust: none;
   }
   .page::before {
     content: attr(data-page); position: absolute;
